@@ -59,10 +59,11 @@
   }
   function validSettings() {
     const s = state.workshops[state.active];
-    return s && /^([01]\d|2[0-3]):[0-5]\d$/.test(s.startTime) && Number.isFinite(s.budget) && s.budget>=30 && s.budget<=1440;
+    return s && /^([01]\d|2[0-3]):[0-5]\d$/.test(s.startTime) && Number.isInteger(s.budget) && s.budget>=30 && s.budget<=1440;
   }
   function renderRecipes() {
-    $('recipes').innerHTML = recipes.map((r,index) => `<button class="recipe-card ${r.id===state.active?'active':''}" data-recipe="${escape(r.id)}" aria-pressed="${r.id===state.active}"><div class="recipe-top"><span class="recipe-number">RECIPE ${String(index+1).padStart(2,'0')}</span><span class="recipe-check" aria-hidden="true">✓</span></div><h3>${escape(r.shortTitle || r.title)}</h3><p>${escape(r.description)}</p><div class="recipe-meta"><span>${escape(r.audience)}</span><span>${duration(r.defaultBudget)} starting plan</span></div></button>`).join('');
+    const descriptions = ['Draft an anchoring proposal and plan the next steps.', 'Practise assessment and prioritise capacity needs.', 'Practise facilitation with observation and peer feedback.'];
+    $('recipes').innerHTML = recipes.map((r,index) => `<button class="recipe-card ${r.id===state.active?'active':''}" data-recipe="${escape(r.id)}" aria-pressed="${r.id===state.active}"><div class="recipe-top"><span class="recipe-number">${duration(r.defaultBudget)} · ${index===2?'Trainer practice':'Shared content'}</span><span class="recipe-check" aria-hidden="true">✓</span></div><h3>${escape(r.shortTitle || r.title)}</h3><p>${descriptions[index] || escape(r.description)}</p></button>`).join('');
   }
   function renderAgenda() {
     const r = recipe(), s = settings(), plan = getPlan();
@@ -74,9 +75,9 @@
       const start = clock(s.startTime,cursor);
       if (chosen.enabled) cursor += v.minutes;
       const utility = block.kind !== 'activity';
-      const selector = block.variants.length>1 ? `<div class="variant-field"><label for="variant-${escape(block.id)}">Activity</label><select id="variant-${escape(block.id)}" data-variant="${escape(block.id)}" ${!chosen.enabled?'disabled':''}>${block.variants.map(option => `<option value="${escape(option.id)}" ${option.id===v.id?'selected':''}>${escape(option.title)} · ${option.minutes} min</option>`).join('')}</select></div>` : '';
+      const selector = block.variants.length>1 ? `<div class="variant-field"><label class="sr-only" for="variant-${escape(block.id)}">Activity for ${escape(block.title)}</label><select id="variant-${escape(block.id)}" data-variant="${escape(block.id)}" ${!chosen.enabled?'disabled':''}>${block.variants.map(option => `<option value="${escape(option.id)}" ${option.id===v.id?'selected':''}>${escape(option.title)} · ${option.minutes} min${option.minutes<v.minutes?' (save '+(v.minutes-option.minutes)+' min)':''}</option>`).join('')}</select></div>` : '';
       const title = !block.required ? `<label class="optional-label"><input id="enable-${escape(block.id)}" type="checkbox" data-enable="${escape(block.id)}" ${chosen.enabled?'checked':''}>${escape(block.title)} <span class="small-note">Optional</span></label>` : `<h4>${escape(block.title)}</h4>`;
-      return `<article class="activity ${utility?'utility':''} ${!chosen.enabled?'disabled-activity':''}"><div class="activity-time">${chosen.enabled?escape(start):'—'}</div><div class="activity-card"><div class="activity-top">${title}<span class="minutes">${v.minutes} min</span></div>${!utility?`<p class="activity-description">${escape(v.description)}</p>${selector}<details data-block="${escape(block.id)}" ${openDetails.has(block.id)?'open':''}><summary>Facilitation notes & resources <span aria-hidden="true">+</span></summary><h5>Steps</h5><ol>${(v.steps||[]).map(text=>`<li>${escape(text)}</li>`).join('')}</ol><p><strong>Leave with:</strong> ${escape(v.output)}</p>${v.debrief?.length?`<h5>Debrief</h5><ul>${v.debrief.map(text=>`<li>${escape(text)}</li>`).join('')}</ul>`:''}<p class="small-note">Learning focus: ${(v.objectives||[]).map(escape).join(', ') || 'Workshop logistics'}</p><div class="resource-links">${(v.materials||[]).map(id=>{const resource=resources.find(r=>r.id===id);return `<button class="resource-link" data-resource="${escape(id)}">${escape(resource?.title||id)} ↗</button>`;}).join('')}</div></details>`:''}</div></article>`;
+      return `<article class="activity ${utility?'utility':''} ${!chosen.enabled?'disabled-activity':''}"><div class="activity-time">${chosen.enabled?escape(start):'—'}</div><div class="activity-card"><div class="activity-top">${title}<span class="minutes">${v.minutes} min</span></div>${!utility?`${selector}<details data-block="${escape(block.id)}" ${openDetails.has(block.id)?'open':''}><summary>Guidance & resources <span aria-hidden="true">+</span></summary><p class="activity-description">${escape(v.description)}</p><h5>Steps</h5><ol>${(v.steps||[]).map(text=>`<li>${escape(text)}</li>`).join('')}</ol><p><strong>Leave with:</strong> ${escape(v.output)}</p>${v.debrief?.length?`<h5>Debrief</h5><ul>${v.debrief.map(text=>`<li>${escape(text)}</li>`).join('')}</ul>`:''}<p class="small-note">Learning focus: ${(v.objectives||[]).map(escape).join(', ') || 'Workshop logistics'}</p><div class="resource-links">${(v.materials||[]).map(id=>{const resource=resources.find(r=>r.id===id);return `<button class="resource-link" data-resource="${escape(id)}">${escape(resource?.title||id)} ↗</button>`;}).join('')}</div></details>`:''}</div></article>`;
     }).join('');
     if (focusId) $(focusId)?.focus({preventScroll:true});
     $('objectives-list').innerHTML = plan.objectives.map(o=>`<li><strong>${escape(o.id)}</strong> ${escape(o.label)}</li>`).join('');
@@ -90,7 +91,9 @@
     $('time-status').textContent = !valid ? 'Enter a start time and a budget of 30–1440 minutes.' : diff<0 ? `${-diff} min over your time. Try a shorter option or allow more time.` : diff===0 ? `Fits your time, including scheduled breaks. Ends ${clock(p.startTime,p.total)}.` : `${diff} min unallocated. Your planned activities end ${clock(p.startTime,p.total)}.`;
     $('pack-description').textContent = `${p.blocks.filter(b=>b.kind==='activity').length} activities and ${p.resources.length} printable worksheet templates, with your chosen timings.`;
     $('download-btn').disabled = $('preview-btn').disabled = !valid;
-    $('print-content').innerHTML = documentHTML(p);
+    document.querySelectorAll('[data-budget]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.budget)===p.budget)));
+    $('time-budget').setAttribute('aria-invalid',String(!Number.isInteger(p.budget)||p.budget<30||p.budget>1440));
+    $('start-time').setAttribute('aria-invalid',String(!/^([01]\d|2[0-3]):[0-5]\d$/.test(p.startTime)));
   }
   function renderAll() {
     const r = recipe(), s = settings();
@@ -100,6 +103,8 @@
     $('time-budget').value = s.budget;
     $('workshop-notes').value = s.notes;
     $('route-output').textContent = r.output;
+    $('route-audience').textContent = r.audience;
+    document.querySelector('.notes-details').open = Boolean(s.notes);
     $('route-limitations').textContent = r.limitations;
     $('preparation-list').innerHTML = r.preparation.map(text=>`<li>${escape(text)}</li>`).join('');
     renderAgenda(); renderSummary(); save();
@@ -110,15 +115,28 @@
   function documentHTML(plan) {
     return `<h1>${escape(plan.title)}</h1><p class="doc-meta">${escape(plan.recipeTitle)} · ${escape(plan.audience)}<br>${escape(plan.process)}<br>Start ${escape(plan.startTime)} · Planned ${plan.total} minutes · Available ${plan.budget} minutes</p><p class="doc-notice">Illustrative NLF workshop plan. Timings and activity variants need testing. Supplied worksheets are draft templates; the trainer must prepare the country evidence and cases listed below.</p>${plan.warnings.map(text=>`<p class="doc-notice">${escape(text)}</p>`).join('')}<h2>Purpose and scope</h2><p>${escape(plan.description)}</p><p><strong>Intended output:</strong> ${escape(plan.output)}</p><p>${escape(plan.limitations)}</p>${plan.notes?`<h2>Notes for this group</h2><p class="doc-note">${escape(plan.notes)}</p>`:''}<h2>Preparation</h2><ul>${plan.preparation.map(text=>`<li>${escape(text)}</li>`).join('')}</ul><h2>Learning focus</h2><ul>${plan.objectives.map(o=>`<li><strong>${escape(o.id)}</strong> ${escape(o.label)}</li>`).join('')}</ul><p class="doc-meta">Coverage indicates planned practice, not certified competence or institutional approval.</p><h2>Timed runsheet</h2><table class="agenda-table"><thead><tr><th>Time</th><th>Min</th><th>Activity</th><th>Output</th></tr></thead><tbody>${plan.blocks.map(block=>`<tr><td>${escape(block.start)}–${escape(block.end)}</td><td>${block.minutes}</td><td><strong>${escape(block.title)}</strong><br>${escape(block.variantTitle)}</td><td>${escape(block.output)}</td></tr>`).join('')}</tbody></table><h2>Facilitator guidance</h2>${plan.blocks.filter(b=>b.kind==='activity').map(block=>`<section class="doc-block"><h3>${escape(block.title)} · ${block.minutes} minutes</h3><p>${escape(block.variantTitle)}. ${escape(block.description)}</p><ol>${(block.steps||[]).map(text=>`<li>${escape(text)}</li>`).join('')}</ol><p><strong>Output:</strong> ${escape(block.output)}</p>${block.debrief?.length?`<p><strong>Debrief questions</strong></p><ul>${block.debrief.map(text=>`<li>${escape(text)}</li>`).join('')}</ul>`:''}<p class="doc-meta">Learning focus: ${(block.objectives||[]).map(escape).join(', ')}<br>Resources: ${(block.materials||[]).map(id=>escape(resources.find(r=>r.id===id)?.title||id)).join('; ')}</p></section>`).join('')}${plan.resources.map(resource=>`<section><h2 class="worksheet-title">Participant worksheet</h2>${worksheetHTML(resource)}</section>`).join('')}<h2>Source and use notes</h2><p class="doc-meta">Adapted from the two supplied draft LO and activity summaries for Political Ownership and Anchoring, Processes 1 and 2. These are prototype recipes, not reviewed or approved training materials. Check against the current NLF handbook and adapt with appropriate support before use.</p>`;
   }
-  function toast(message) { $('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('visible'),4200); }
+  let undoAction = null;
+  function toast(message,undo) {
+    $('toast-message').textContent=message;
+    undoAction=undo || null;
+    $('undo-btn').hidden=!undoAction;
+    $('toast').classList.add('visible');
+    clearTimeout(toast.timer);
+    toast.timer=setTimeout(()=>{$('toast').classList.remove('visible');undoAction=null;$('undo-btn').hidden=true;},undo?10000:4200);
+  }
+  $('undo-btn').addEventListener('click',()=>{if(undoAction){undoAction();toast('Your previous plan is restored.');}});
+  document.querySelector('.time-presets').addEventListener('click',event=>{
+    const button=event.target.closest('[data-budget]');if(!button)return;
+    settings().budget=Number(button.dataset.budget);$('time-budget').value=settings().budget;save();renderSummary();
+  });
   function info(title,html) { $('info-title').textContent=title;$('info-content').innerHTML=html;if(!$('info-dialog').open)$('info-dialog').showModal(); }
-  $('recipes').addEventListener('click',event=>{const target=event.target.closest('[data-recipe]');if(!target)return;state.active=target.dataset.recipe;renderAll();document.querySelector(`[data-recipe="${state.active}"]`)?.focus({preventScroll:true});});
+  $('recipes').addEventListener('click',event=>{const target=event.target.closest('[data-recipe]');if(!target || target.dataset.recipe===state.active)return;state.active=target.dataset.recipe;renderAll();document.querySelector(`[data-recipe="${state.active}"]`)?.focus({preventScroll:true});});
   $('agenda').addEventListener('change',event=>{const el=event.target,s=settings();if(el.dataset.variant)s.selections[el.dataset.variant].variant=el.value;if(el.dataset.enable)s.selections[el.dataset.enable].enabled=el.checked;save();renderAgenda();renderSummary();});
   $('agenda').addEventListener('click',event=>{const target=event.target.closest('[data-resource]');if(!target)return;const resource=resources.find(r=>r.id===target.dataset.resource);if(resource)info('Worksheet preview',worksheetHTML(resource));});
   for(const [id,field] of [['workshop-title','title'],['start-time','startTime'],['time-budget','budget'],['workshop-notes','notes']]) {
     $(id).addEventListener('input',event=>{settings()[field]=field==='budget'?Number(event.target.value):event.target.value;save();if(field==='startTime')renderAgenda();renderSummary();});
   }
-  $('reset-btn').addEventListener('click',()=>{state.workshops[state.active]=defaults(recipe());renderAll();toast('This recipe is back to its starting plan.');});
+  $('reset-btn').addEventListener('click',()=>{const id=state.active,previous=JSON.parse(JSON.stringify(settings()));state.workshops[id]=defaults(recipe());renderAll();toast('Recipe reset to its starting plan.',()=>{state.workshops[id]=previous;if(state.active===id)renderAll();else save();});});
   $('download-btn').addEventListener('click',()=>{
     if(!validSettings())return;
     try{if(!window.NLFExport)throw new Error('Exporter unavailable');const plan=getPlan();window.NLFExport.downloadDocx(plan);toast(plan.total>plan.budget?'Word pack downloaded with the time warning included.':'Your editable Word pack has been downloaded.');}
