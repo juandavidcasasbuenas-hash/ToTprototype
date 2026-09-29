@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#244c3c">
+  <title>NLF Workshop Builder</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23244c3c'/%3E%3Cpath d='M10 29V11l20 18V11' stroke='%23fff' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="recipes.js"></script>
+  <script defer src="export.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="NLF Workshop Builder home"><span class="brand-mark" aria-hidden="true">N</span><span><strong>NLF</strong><span class="brand-divider">/</span> Workshop Builder</span></a>
+      <div class="top-actions"><span class="prototype-pill">Working prototype</span><button class="text-button" id="about-btn">About this prototype <span aria-hidden="true">↗</span></button></div>
+    </header>
+    <main id="top">
+      <section class="hero" aria-labelledby="page-title">
+        <div><p class="eyebrow">CAPACITY BUILDING · TRAINING OF TRAINERS</p><h1 id="page-title">A considered starting point.<br><em>Your workshop from here.</em></h1></div>
+        <div class="hero-aside"><p>Start with a workshop recipe.<br>Adapt the activities to your group.<br>Take a practical plan into the room.</p><span class="offline-note"><span class="status-dot"></span> No account needed. Works offline.</span></div>
+      </section>
+      <section class="recipes-section" aria-labelledby="recipe-heading">
+        <div class="section-header"><h2 id="recipe-heading"><span class="step">01</span> Choose your starting point</h2><span class="section-note">Three illustrative recipes</span></div>
+        <div class="recipe-grid" id="recipes"></div>
+      </section>
+      <section class="builder-section" aria-labelledby="builder-heading">
+        <div class="section-header builder-header"><h2 id="builder-heading"><span class="step">02</span> Make it work for your group</h2><button class="text-button" id="reset-btn">Reset this recipe <span aria-hidden="true">↺</span></button></div>
+        <div class="workspace">
+          <div class="agenda-column">
+            <div class="route-brief"><span class="eyebrow">WHAT YOU WILL WORK TOWARDS</span><p id="route-output"></p><p class="scope-note" id="route-limitations"></p></div>
+            <div class="agenda-heading"><h3>Your running order</h3><span>Swap activities. Keep the sequence.</span></div>
+            <div id="agenda"></div>
+            <details class="preparation"><summary>Before you bring the group together <span aria-hidden="true">+</span></summary><ul id="preparation-list"></ul></details>
+            <details class="preparation"><summary>Learning objectives in this recipe <span aria-hidden="true">+</span></summary><ul id="objectives-list"></ul><p class="small-note">These are opportunities for practice. The plan does not certify competence or institutional readiness.</p></details>
+          </div>
+          <aside class="plan-panel" aria-label="Workshop settings and downloads">
+            <div class="panel-heading"><span class="eyebrow">YOUR WORKSHOP</span><span class="save-state" id="save-state">Saved on this device</span></div>
+            <label for="workshop-title">Workshop name</label><input id="workshop-title" type="text" maxlength="120" autocomplete="off">
+            <div class="field-row"><div><label for="start-time">Start time</label><input id="start-time" type="time" value="09:00" required></div><div><label for="time-budget">Time available <span>(min)</span></label><input id="time-budget" type="number" min="30" max="1440" step="15" required></div></div>
+            <div class="time-summary" aria-live="polite" aria-atomic="true"><div class="time-numbers"><span id="planned-time"></span><span id="time-comparison"></span></div><div class="time-track"><span id="time-fill"></span></div><p id="time-status"></p></div>
+            <label for="workshop-notes">Notes for your group <span>(optional)</span></label><textarea id="workshop-notes" rows="3" maxlength="3000" placeholder="Country context, language support, things to check…"></textarea>
+            <div class="pack-summary"><h3><span class="step small">03</span> Take your plan with you</h3><p id="pack-description"></p><div class="pack-tags"><span>Timed runsheet</span><span>Facilitator notes</span><span>Worksheets</span></div></div>
+            <button class="button primary" id="download-btn"><span>Download Word pack</span><span aria-hidden="true">↓</span></button>
+            <button class="button secondary" id="preview-btn"><span>Preview & print / PDF</span><span aria-hidden="true">↗</span></button>
+            <p class="export-note">Edit the Word file locally. To save a PDF, choose “Save as PDF” in the print window.</p>
+            <div class="timing-note"><span aria-hidden="true">◷</span><p>Timings are estimates. These sample routes need a dry run before delivery.</p></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+    <footer><span>NLF Capacity Building</span><span>A small prototype of the recipe approach · September 2026</span><button class="text-button" id="sources-btn">Sources & assumptions</button></footer>
+  </div>
+  <dialog id="preview-dialog" aria-labelledby="preview-title"><div class="dialog-toolbar"><div><span class="eyebrow">YOUR OFFLINE PACK</span><h2 id="preview-title">Workshop preview</h2></div><div><button class="button secondary" id="print-btn">Print / Save PDF</button><button class="close-button" data-close="preview-dialog" aria-label="Close preview">×</button></div></div><div id="preview-content" class="document-content"></div></dialog>
+  <dialog id="info-dialog" aria-labelledby="info-title"><div class="dialog-toolbar"><h2 id="info-title">About this prototype</h2><button class="close-button" data-close="info-dialog" aria-label="Close information">×</button></div><div id="info-content" class="info-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="print-content" class="document-content" aria-hidden="true"></div>
+</body>
+</html>
